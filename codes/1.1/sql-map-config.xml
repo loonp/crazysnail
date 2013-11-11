@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"  standalone="no"?>   
+<!DOCTYPE sqlMapConfig PUBLIC "-//iBATIS.com//DTD SQL Map Config 2.0//EN" "http://www.ibatis.com/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+<!-- MUST DISABLE LAZY 	load for http invoker, too bad to 。。。 -->
+	<settings
+			cacheModelsEnabled="false"
+			enhancementEnabled="true"
+			lazyLoadingEnabled="true"
+			maxRequests="20"
+			maxSessions="5"
+			maxTransactions="50"
+			useStatementNamespaces="true"
+			
+			/>
+		
+	<!-- user -->
+</sqlMapConfig>

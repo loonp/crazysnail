@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.5.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd"
+	default-lazy-init="true"
+	default-autowire="byName">
+	<description>Spring公共配置文件</description>
+
+	<!-- 定义受环境影响易变的变量 -->
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<value>classpath*:jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+	<bean id="masterDataSource"
+		class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>${jdbc.master.driverClassName}</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>${jdbc.master.url}</value>
+		</property>
+		<property name="user">
+			<value>${jdbc.master.username}</value>
+		</property>
+		<property name="password">
+			<value>${jdbc.master.password}</value>
+		</property>
+		<property name="initialPoolSize">
+			<value>${jdbc.master.initialPoolSize}</value>
+		</property>
+		<property name="minPoolSize">
+			<value>${jdbc.master.minPoolSize}</value>
+		</property>
+		<property name="maxPoolSize">
+			<value>${jdbc.master.maxPoolSize}</value>
+		</property>
+		<property name="acquireIncrement">
+			<value>${jdbc.master.acquireIncrement}</value>
+		</property>
+		<property name="maxIdleTime">
+			<value>${jdbc.master.maxIdleTime}</value>
+		</property>
+		<property name="maxStatements">
+			<value>${jdbc.master.maxStatements}</value>
+		</property>
+		<property name="maxStatementsPerConnection">
+			<value>${jdbc.master.maxStatementsPerConnection}</value>
+		</property>
+	</bean>
+	<!--
+	<bean id="slaveDataSource"
+		class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>${jdbc.slave.driverClassName}</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>${jdbc.slave.url}</value>
+		</property>
+		<property name="user">
+			<value>${jdbc.slave.username}</value>
+		</property>
+		<property name="password">
+			<value>${jdbc.slave.password}</value>
+		</property>
+		<property name="initialPoolSize">
+			<value>${jdbc.slave.initialPoolSize}</value>
+		</property>
+		<property name="minPoolSize">
+			<value>${jdbc.slave.minPoolSize}</value>
+		</property>
+		<property name="maxPoolSize">
+			<value>${jdbc.slave.maxPoolSize}</value>
+		</property>
+		<property name="acquireIncrement">
+			<value>${jdbc.slave.acquireIncrement}</value>
+		</property>
+		<property name="maxIdleTime">
+			<value>${jdbc.slave.maxIdleTime}</value>
+		</property>
+		<property name="maxStatements">
+			<value>${jdbc.slave.maxStatements}</value>
+		</property>
+		<property name="maxStatementsPerConnection">
+			<value>${jdbc.slave.maxStatementsPerConnection}</value>
+		</property>
+	</bean>
+	  -->
+	<!-- master spy dataSource -->        
+	<bean id="masterSpyDataSource" class="com.p6spy.engine.spy.P6DataSource">           
+	    <constructor-arg>           
+	        <ref local="masterDataSource"/>           
+	    </constructor-arg>           
+	</bean>
+	<!-- slave spy dataSource  
+	<bean id="slaveSpyDataSource" class="com.p6spy.engine.spy.P6DataSource">           
+	    <constructor-arg>           
+	        <ref local="slaveDataSource"/>           
+	    </constructor-arg>           
+	</bean>
+	 -->
+	<!-- ibatis sqlMapClient config -->
+	<bean id="masterSqlMapClient"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="configLocation">
+			<value>
+				classpath:sql-map-config.xml
+			</value>
+		</property>
+		<property name="dataSource">
+			<ref bean="masterSpyDataSource" />
+		</property>
+	</bean>
+	<!-- 
+	<bean id="slaveSqlMapClient"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="configLocation">
+			<value>
+				classpath:sql-map-config.xml
+			</value>
+		</property>
+		<property name="dataSource">
+			<ref bean="slaveSpyDataSource" />
+		</property>
+	</bean>
+	 -->
+	<!-- 根据sqlMapClient创建一个SqlMapClientTemplate的模版类实例sqlMapClientTemplate -->
+	<bean id="masterSqlMapClientTemplate"
+		class="org.springframework.orm.ibatis.SqlMapClientTemplate">
+		<property name="sqlMapClient" ref="masterSqlMapClient" />
+	</bean>
+	<!-- 
+	<bean id="slaveSqlMapClientTemplate"
+		class="org.springframework.orm.ibatis.SqlMapClientTemplate">
+		<property name="sqlMapClient" ref="slaveSqlMapClient" />
+	</bean>
+	 -->
+	<!--Spring TransactionManager-->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="masterSpyDataSource"/>
+	</bean>
+	
+	<!-- 使用annotation定义事务 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<!-- 使用annotation 自动注册bean,并保证@Required,@Autowired的属性被注入 -->
+	<context:component-scan base-package="com.bluesand">
+		<context:include-filter type="regex" expression=".*Dao"/>
+		<context:include-filter type="regex" expression=".*Service" />
+	</context:component-scan>
+</beans>
