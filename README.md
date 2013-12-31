@@ -9,3 +9,4 @@ crazysnail
 1.2 - [前端优化](1.2.md)  
 1.3 - [linux下go环境的安装](1.3.md)  
 1.4 - [阿里云ubuntu的gcc安装](1.4.md)
+1.5 - [go web开发环境搭建](1.5.md)
